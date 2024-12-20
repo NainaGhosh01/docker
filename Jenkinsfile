@@ -1,29 +1,25 @@
 pipeline {
     agent any
-    
     stages {
         stage('Checkout Code') {
             steps {
-                git 'https://github.com/NainaGhosh01/docker/Jenkinsfile.git'  
+                git 'https://github.com/NainaGhosh01/docker.git'
             }
         }
-        
         stage('Build Docker Image') {
             steps {
-                sh 'docker build -t s3-to-rds-glue .'
+                sh 'docker build -t my-docker-image:latest .'
             }
         }
-        
         stage('Push to ECR') {
             steps {
                 sh '''
-                aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin <ecr_repository_uri>
-                docker tag s3-to-rds-glue:latest <ecr_repository_uri>:latest
-                docker push <ecr_repository_uri>:latest
+                $(aws ecr get-login-password --region your-region | docker login --username AWS --password-stdin your-account-id.dkr.ecr.your-region.amazonaws.com)
+                docker tag your-repo/your-image:latest your-account-id.dkr.ecr.your-region.amazonaws.com/your-image:latest
+                docker push your-account-id.dkr.ecr.your-region.amazonaws.com/your-image:latest
                 '''
             }
         }
-        
         stage('Terraform Init & Apply') {
             steps {
                 sh '''
@@ -33,21 +29,14 @@ pipeline {
                 '''
             }
         }
-        
         stage('Deploy Lambda Function') {
             steps {
-                sh '''
-                aws lambda update-function-code --function-name s3-to-rds-glue --image-uri <ecr_repository_uri>:latest
-                '''
+                sh 'aws lambda update-function-code --function-name your-lambda-function --image-uri your-account-id.dkr.ecr.your-region.amazonaws.com/your-image:latest'
             }
         }
-        
         stage('Test Lambda Function') {
             steps {
-                sh '''
-                aws lambda invoke --function-name s3-to-rds-glue output.json
-                cat output.json
-                '''
+                sh 'aws lambda invoke --function-name your-lambda-function response.json'
             }
         }
     }
