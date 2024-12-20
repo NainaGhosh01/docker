@@ -4,7 +4,7 @@ pipeline {
     stages {
         stage('Checkout Code') {
             steps {
-                git 'https://github.com/your-repo.git'  # Replace with your GitHub repository URL
+                git 'https://github.com/NainaGhosh01/docker.git'  # Replace with your GitHub repository URL
             }
         }
         
