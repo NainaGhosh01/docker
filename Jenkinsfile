@@ -11,21 +11,29 @@ pipeline {
                 sh 'docker build -t my-docker-repo .'
             }
         }
-        stage('Push Docker Image to ECR') {
-            steps {
-                sh '''
-                aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin <ECR_REPO_URL>
-                docker tag my-docker-repo:latest <ECR_REPO_URL>:latest
-                docker push <ECR_REPO_URL>:latest
-                '''
-            }
-        }
         stage('Apply Terraform') {
             steps {
                 sh '''
                 cd terraform
                 terraform init
-                terraform apply -auto-approve
+                terraform apply -auto-approve > tf_output.txt
+                '''
+            }
+        }
+        stage('Extract ECR URL') {
+            steps {
+                script {
+                    def ecrUrl = sh(script: "cd terraform && terraform output -raw ecr_repository_url", returnStdout: true).trim()
+                    env.ECR_URL = ecrUrl
+                }
+            }
+        }
+        stage('Push Docker Image to ECR') {
+            steps {
+                sh '''
+                aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin $ECR_URL
+                docker tag my-docker-repo:latest $ECR_URL:latest
+                docker push $ECR_URL:latest
                 '''
             }
         }
