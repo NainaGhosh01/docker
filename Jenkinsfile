@@ -1,26 +1,26 @@
 pipeline {
     agent any
     stages {
-        stage('Checkout Code') {
+        stage('Clone Repository') {
             steps {
                 git 'https://github.com/NainaGhosh01/docker.git'
             }
         }
         stage('Build Docker Image') {
             steps {
-                sh 'docker build -t my-docker-image:latest .'
+                sh 'docker build -t my-docker-repo .'
             }
         }
-        stage('Push to ECR') {
+        stage('Push Docker Image to ECR') {
             steps {
                 sh '''
-                $(aws ecr get-login-password --region your-region | docker login --username AWS --password-stdin your-account-id.dkr.ecr.your-region.amazonaws.com)
-                docker tag your-repo/your-image:latest your-account-id.dkr.ecr.your-region.amazonaws.com/your-image:latest
-                docker push your-account-id.dkr.ecr.your-region.amazonaws.com/your-image:latest
+                aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin <ECR_REPO_URL>
+                docker tag my-docker-repo:latest <ECR_REPO_URL>:latest
+                docker push <ECR_REPO_URL>:latest
                 '''
             }
         }
-        stage('Terraform Init & Apply') {
+        stage('Apply Terraform') {
             steps {
                 sh '''
                 cd terraform
@@ -29,14 +29,10 @@ pipeline {
                 '''
             }
         }
-        stage('Deploy Lambda Function') {
-            steps {
-                sh 'aws lambda update-function-code --function-name your-lambda-function --image-uri your-account-id.dkr.ecr.your-region.amazonaws.com/your-image:latest'
-            }
-        }
         stage('Test Lambda Function') {
             steps {
-                sh 'aws lambda invoke --function-name your-lambda-function response.json'
+                sh 'aws lambda invoke --function-name s3-to-rds-glue out.txt'
+                sh 'cat out.txt'
             }
         }
     }
