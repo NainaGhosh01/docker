@@ -2,8 +2,8 @@ FROM python:3.9-slim
 
 WORKDIR /app
 
-COPY app.py /app/app.py
+COPY s3_to_rds_glue.py /app/
 
-RUN pip install boto3
+RUN pip install boto3 pymysql
 
-CMD ["python", "app.py"]
+CMD ["python", "s3_to_rds_glue.py"]
